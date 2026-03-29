@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { apiFetch } from '../api/client'
+import { resolveScreenshotUrl, screenshotKey } from '../utils/screenshotUrl'
 
 function toLocalInput(iso) {
   if (!iso) return ''
@@ -298,21 +299,25 @@ export function TradeForm() {
             <div className="sm:col-span-2">
               <p className="text-xs font-medium text-slate-400">Current screenshots</p>
               <div className="mt-2 flex flex-wrap gap-2">
-                {existingShots.map((name) => (
-                  <a
-                    key={name}
-                    href={`/uploads/trades/${name}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="block overflow-hidden rounded-lg border border-slate-700"
-                  >
-                    <img
-                      src={`/uploads/trades/${name}`}
-                      alt=""
-                      className="h-24 w-auto max-w-[200px] object-cover"
-                    />
-                  </a>
-                ))}
+                {existingShots.map((shot, i) => {
+                  const src = resolveScreenshotUrl(shot)
+                  if (!src) return null
+                  return (
+                    <a
+                      key={screenshotKey(shot, i)}
+                      href={src}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="block overflow-hidden rounded-lg border border-slate-700"
+                    >
+                      <img
+                        src={src}
+                        alt=""
+                        className="h-24 w-auto max-w-[200px] object-cover"
+                      />
+                    </a>
+                  )
+                })}
               </div>
             </div>
           )}

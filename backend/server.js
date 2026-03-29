@@ -4,6 +4,9 @@ const path = require('path');
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const { configure: configureCloudinary, configured: cloudinaryReady } = require('./utils/cloudinary');
+
+configureCloudinary();
 
 const authRoutes = require('./routes/auth');
 const tradesRoutes = require('./routes/trades');
@@ -42,6 +45,8 @@ mongoose
   .connect(MONGODB_URI)
   .then(() => {
     console.log('MongoDB connected');
+    if (cloudinaryReady()) console.log('Cloudinary ready for image uploads');
+    else console.log('Cloudinary not set — trade images require CLOUDINARY_* in .env');
     app.listen(PORT, () => {
       console.log(`API http://localhost:${PORT}`);
     });

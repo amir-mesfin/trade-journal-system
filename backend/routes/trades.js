@@ -1,9 +1,8 @@
 const express = require('express');
-const fs = require('fs').promises;
-const path = require('path');
 const Trade = require('../models/Trade');
 const { authRequired } = require('../middleware/auth');
-const { uploadScreenshots, uploadDir } = require('../middleware/upload');
+const { uploadScreenshots } = require('../middleware/upload');
+const { filesToScreenshots, removeStoredScreenshots } = require('../utils/screenshots');
 
 const router = express.Router();
 
@@ -56,7 +55,12 @@ router.post('/', handleUpload, async (req, res) => {
       }
     }
 
-    const screenshots = (req.files || []).map((f) => f.filename);
+    let screenshots = [];
+    try {
+      screenshots = await filesToScreenshots(req.files || []);
+    } catch (upErr) {
+      return res.status(upErr.statusCode || 500).json({ error: upErr.message });
+    }
 
     const trade = await Trade.create({
       user: req.userId,
@@ -211,9 +215,14 @@ router.patch('/:id', handleUpload, async (req, res) => {
         if (!Number.isNaN(d.getTime())) trade.closedAt = d;
       }
     }
-    const newFiles = (req.files || []).map((f) => f.filename);
-    if (newFiles.length) {
-      trade.screenshots = [...(trade.screenshots || []), ...newFiles];
+    let newShots = [];
+    try {
+      newShots = await filesToScreenshots(req.files || []);
+    } catch (upErr) {
+      return res.status(upErr.statusCode || 500).json({ error: upErr.message });
+    }
+    if (newShots.length) {
+      trade.screenshots = [...(trade.screenshots || []), ...newShots];
     }
     await trade.save();
     res.json(trade);
@@ -228,13 +237,7 @@ router.delete('/:id', async (req, res) => {
   try {
     const trade = await Trade.findOne({ _id: req.params.id, user: req.userId });
     if (!trade) return res.status(404).json({ error: 'Trade not found' });
-    for (const name of trade.screenshots || []) {
-      try {
-        await fs.unlink(path.join(uploadDir, name));
-      } catch {
-        /* ignore */
-      }
-    }
+    await removeStoredScreenshots(trade.screenshots);
     await trade.deleteOne();
     res.status(204).send();
   } catch (e) {

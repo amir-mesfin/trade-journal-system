@@ -18,7 +18,8 @@ const tradeSchema = new mongoose.Schema(
     profitLoss: { type: Number },
     strategy: { type: String, trim: true, default: '' },
     notes: { type: String, default: '' },
-    screenshots: [{ type: String }],
+    /** { url, publicId } from Cloudinary, or legacy local filename string */
+    screenshots: [{ type: mongoose.Schema.Types.Mixed }],
     openedAt: { type: Date, required: true },
     closedAt: { type: Date },
     status: { type: String, enum: ['open', 'closed'], default: 'closed' },
