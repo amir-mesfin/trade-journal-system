@@ -34,6 +34,17 @@ const tradeSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-tradeSchema.index({ user: 1, externalId: 1 }, { unique: true, sparse: true });
+// Unique per user only when externalId is set (CSV dedup). A plain sparse compound
+// index still indexes every doc because `user` exists, so multiple manual trades
+// without externalId collided as (user, null). Partial index excludes those rows.
+tradeSchema.index(
+  { user: 1, externalId: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      externalId: { $exists: true, $type: 'string', $gt: '' },
+    },
+  }
+);
 
 module.exports = mongoose.model('Trade', tradeSchema);

@@ -86,8 +86,14 @@ if (!process.env.JWT_SECRET) {
 
 mongoose
   .connect(MONGODB_URI)
-  .then(() => {
+  .then(async () => {
     console.log('MongoDB connected');
+    const Trade = require('./models/Trade');
+    try {
+      await Trade.syncIndexes();
+    } catch (e) {
+      console.error('Trade.syncIndexes failed (fix indexes in Atlas if needed):', e.message);
+    }
     if (cloudinaryReady()) console.log('Cloudinary ready for image uploads');
     else console.log('Cloudinary not set — trade images require CLOUDINARY_* in .env');
     app.listen(PORT, () => {
